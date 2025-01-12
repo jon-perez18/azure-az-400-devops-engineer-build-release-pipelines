@@ -1,0 +1,23 @@
+parameters:
+- name: WebAppName
+  type: string
+- name: EnvironmentName
+  type: string
+
+jobs:
+- deployment: deploy_app_service
+  environment:
+    name: ${{ parameters.EnvironmentName }}
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+        - download: current
+          artifact: Weatherforecast Api
+        - task: AzureRmWebAppDeployment@4
+          inputs:
+            ConnectionType: 'AzureRM'
+            azureSubscription: 'DeployAppService'
+            appType: 'webAppLinux'
+            WebAppName: ${{ parameters.WebAppName }}
+            packageForLinux: '$(Pipeline.Workspace)/Weatherforecast Api/WeatherForecast.Api.zip'

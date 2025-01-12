@@ -1,0 +1,60 @@
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: ci
+    displayName: Continuous Integration
+    jobs:
+    - job: build
+      displayName: 'Build and Publish Weatherforecast Api Zip Package'
+      steps:
+      - task: UseDotNet@2
+        displayName: 'Use .NET Core SDK 8.x'
+        inputs:
+          version: 8.x
+      - task: DotNetCoreCLI@2
+        displayName: 'Compile the application'
+        inputs:
+          projects: '**/*.csproj'
+          arguments: '--configuration $(Configuration)'
+      - task: DotNetCoreCLI@2
+        displayName: 'Run unit tests'
+        inputs:
+          command: test
+          projects: '**/*.UnitTests.csproj'
+          arguments: '--configuration $(Configuration)'
+      - task: DotNetCoreCLI@2
+        displayName: 'Run integration tests'
+        inputs:
+          command: test
+          projects: '**/*.IntegrationTests.csproj'
+          publishTestResults: true
+          arguments: '--configuration $(Configuration) /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
+      - task: PublishCodeCoverageResults@2
+        displayName: 'Publish Coverage to ADO'
+        inputs:
+          summaryFileLocation: '**/*coverage.cobertura.xml'
+      - task: DotNetCoreCLI@2
+        displayName: 'Dotnet Publish'
+        inputs:
+          command: publish
+          arguments: '--output $(Build.ArtifactStagingDirectory)/api-package --configuration $(Configuration)'
+      - task: PublishPipelineArtifact@1
+        displayName: 'Publish Pipeline Artifact'
+        inputs:
+          targetPath: '$(Build.ArtifactStagingDirectory)/api-package'
+          artifact: 'Weatherforecast Api'
+
+  - stage: cd_to_test
+    displayName: Continuous Deployment to Test
+    jobs:
+    - template: stage-deployment.yml
+      parameters:
+        WebAppName: 'weatherforecast-hb-test'
+
+  - stage: cd_to_production
+    displayName: Continuous Deployment to Production
+    jobs:
+    - template: stage-deployment.yml
+      parameters:
+        WebAppName: 'weatherforecast-hb-production'

@@ -1,0 +1,37 @@
+# Define our audit policy
+az policy definition create --name auditApplicationInsightsLocalAuth --rules audit-application-insights-local-auth.json --mode All --subscription 1dad7d18-a6d1-40c2-a56f-7dfe89999e67
+
+# Create test RG
+az group create --resource-group create-app-insights --location westeurope --subscription 1dad7d18-a6d1-40c2-a56f-7dfe89999e67
+
+# Just in case, only if you haven't installed the application insights extension yet
+az extension add --name application-insights
+
+# Find your policy id if you haven't yet
+az policy definition show --name auditapplicationInsightsLocalAuth --subscription 1dad7d18-a6d1-40c2-a56f-7dfe89999e67
+
+# Assign Azure audit policy
+az policy assignment create --name auditApplicationInsightsLocalAuthDemo --policy /subscriptions/1dad7d18-a6d1-40c2-a56f-7dfe89999e67/providers/Microsoft.Authorization/policyDefinitions/auditApplicationInsightsLocalAuth --scope /subscriptions/1dad7d18-a6d1-40c2-a56f-7dfe89999e67
+
+# Create incompliant app insights instance
+az monitor app-insights component create --app uniquedemoname1 --resource-group create-app-insights --location westeurope --subscription 1dad7d18-a6d1-40c2-a56f-7dfe89999e67
+
+# Check policy state in the portal, this can take a while (sometimes minutes, sometimes hours)
+
+# Define our deny policy
+az policy definition create --name denyApplicationInsightsLocalAuth --rules deny-application-insights-local-auth.json --mode All --subscription 1dad7d18-a6d1-40c2-a56f-7dfe89999e67
+
+# Assign Azure deny policy
+az policy assignment create --name denyApplicationInsightsLocalAuthDemo --policy /subscriptions/1dad7d18-a6d1-40c2-a56f-7dfe89999e67/providers/Microsoft.Authorization/policyDefinitions/denyApplicationInsightsLocalAuth --scope /subscriptions/1dad7d18-a6d1-40c2-a56f-7dfe89999e67
+
+# Don't tempt faith, wait a few minutes before proceeding;
+
+# Create incompliant app insights again (should not work!)
+az monitor app-insights component create --app uniquedemoname2 --resource-group create-app-insights --location westeurope --subscription 1dad7d18-a6d1-40c2-a56f-7dfe89999e67
+
+# Nicely clean up
+az group delete --resource-group create-app-insights --subscription 1dad7d18-a6d1-40c2-a56f-7dfe89999e67
+az policy assignment delete --name auditApplicationInsightsLocalAuthDemo --scope /subscriptions/1dad7d18-a6d1-40c2-a56f-7dfe89999e67
+az policy assignment delete --name denyApplicationInsightsLocalAuthDemo --scope /subscriptions/1dad7d18-a6d1-40c2-a56f-7dfe89999e67
+az policy definition delete --name auditApplicationInsightsLocalAuth --subscription 1dad7d18-a6d1-40c2-a56f-7dfe89999e67
+az policy definition delete --name denyApplicationInsightsLocalAuth --subscription 1dad7d18-a6d1-40c2-a56f-7dfe89999e67

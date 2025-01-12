@@ -1,1 +1,1 @@
-This repository contains the files that come along with the Pluralsight course  AZ-400 DevOps Engineer: Build and Release Pipelines
+This repository contains the files that come along with the Pluralsight course AZ-400 DevOps Engineer: Build and Release Pipelines

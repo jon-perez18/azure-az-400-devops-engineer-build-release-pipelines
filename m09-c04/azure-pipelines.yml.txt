@@ -1,0 +1,105 @@
+pool:
+  vmImage: ubuntu-latest
+
+trigger:
+- main
+
+variables:
+- name: ClientPackageVersion
+  value: 1.0.0
+
+stages:
+  - stage: ci
+    displayName: Continuous Integration
+    jobs:
+    - job: build
+      displayName: 'Build and Publish Weatherforecast Api Zip Package'
+      steps:
+      - task: UseDotNet@2
+        displayName: 'Use .NET Core SDK 8.x'
+        inputs:
+          version: 8.x
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Compile the application'
+        inputs:
+          projects: '**/*.csproj'
+          arguments: '--configuration $(Configuration)'
+      - task: DotNetCoreCLI@2
+        displayName: 'Run unit tests'
+        inputs:
+         command: test
+         projects: '**/*.UnitTests.csproj'
+         publishTestResults: true
+         arguments: '--no-restore --configuration $(Configuration) /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
+      - task: DotNetCoreCLI@2
+        displayName: 'Run integration tests'
+        inputs:
+         command: test
+         projects: '**/*.IntegrationTests.csproj'
+         publishTestResults: true
+         arguments: '--no-restore --configuration $(Configuration) /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
+      - task: PublishCodeCoverageResults@2
+        displayName: Publish Code Coverage
+        inputs:
+         summaryFileLocation: '**/*coverage.cobertura.xml'  
+      - task: DotNetCoreCLI@2
+        displayName: 'Dotnet Publish'
+        inputs:
+          command: publish
+          arguments: '--no-restore --output $(Build.ArtifactStagingDirectory)/api-package --configuration $(Configuration)'
+      - task: PublishPipelineArtifact@1
+        displayName: 'Publish Pipeline Artifact'
+        inputs:
+          targetPath: '$(Build.ArtifactStagingDirectory)/api-package'
+          artifact: 'Weatherforecast Api'
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Build NuGet Package Client'
+        inputs:
+          command: pack
+          packagesToPack: '$(Build.SourcesDirectory)/WeatherForecast.Client/WeatherForecast.Client.csproj'
+          configuration: Release
+          packDirectory: '$(Build.ArtifactStagingDirectory)/packages'
+          versioningScheme: 'byEnvVar'
+          versionEnvVar: 'ClientPackageVersion'
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Build NuGet Package Dto'
+        inputs:
+          command: pack
+          packagesToPack: '$(Build.SourcesDirectory)/WeatherForecast.Api.Dto/WeatherForecast.Api.Dto.csproj'
+          configuration: Release
+          packDirectory: '$(Build.ArtifactStagingDirectory)/packages'
+          versioningScheme: 'byEnvVar'
+          versionEnvVar: 'ClientPackageVersion'
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Publish NuGet Package Client'
+        inputs:
+         command: push
+         packagesToPush: '$(Build.ArtifactStagingDirectory)/packages/WeatherForecast.Client*.nupkg'
+         publishVstsFeed: 'AZ400BuildRelease/weatherforecast-api-package'
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Publish NuGet Package Dto'
+        inputs:
+         command: push
+         packagesToPush: '$(Build.ArtifactStagingDirectory)/packages/WeatherForecast.Api.Dto*.nupkg'
+         publishVstsFeed: 'AZ400BuildRelease/weatherforecast-api-package'
+
+  - stage: cd_to_test
+    displayName: Continuous Deployment to Test
+    jobs:
+    - template: stage-deployment.yml
+      parameters:
+        WebAppName: 'weatherforecast-hb-test'
+        EnvironmentName: 'WeatherForecastApi - Test'
+
+  - stage: cd_to_production
+    displayName: Continuous Deployment to Production
+    jobs:
+    - template: stage-deployment.yml
+      parameters:
+        WebAppName: 'weatherforecast-hb-production'
+        EnvironmentName: 'WeatherForecastApi - Production'

@@ -1,0 +1,4 @@
+1. Show test projects
+2. Show installed stuff for test collection
+3. Build pipeline
+4. Show outcomes

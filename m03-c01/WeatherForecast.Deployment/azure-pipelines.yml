@@ -1,0 +1,57 @@
+﻿pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+  - stage: ci
+    displayName: Continuous Integration
+    jobs:
+    - job: publish_artifact
+      displayName: 'Package Weatherforecast Api'
+      steps:
+      - task: UseDotNet@2
+        displayName: 'Use .NET Core SDK 8.x'
+        inputs:
+          version: 8.x
+      - task: DotNetCoreCLI@2
+        displayName: 'Dotnet Publish'
+        inputs:
+          command: publish
+          arguments: '--output $(Build.ArtifactStagingDirectory)/api-package --configuration $(Configuration)'
+      - task: PublishPipelineArtifact@1
+        displayName: 'Publish Pipeline Artifact'
+        inputs:
+          targetPath: '$(Build.ArtifactStagingDirectory)/api-package'
+          artifact: 'Weatherforecast Api'
+
+    - job: build_and_test
+      displayName: 'Build and Test .NET 8 Application'
+      steps:
+      - task: UseDotNet@2
+        displayName: 'Use .NET Core sdk 8.x'
+        inputs:
+          version: 8.x
+      - task: DotNetCoreCLI@2
+        displayName: 'dotnet build'
+        inputs:
+          projects: '**/*.csproj'
+          arguments: '--configuration $(Configuration)'
+      - task: DotNetCoreCLI@2
+        displayName: 'dotnet test'
+        inputs:
+          command: test
+          projects: '**/*.UnitTest.csproj'
+          arguments: '--configuration $(Configuration)'
+  - stage: cd
+    displayName: Continuous Deployment
+    jobs:
+    - job: deploy_app_service
+      steps:
+      - download: current
+        artifact: Weatherforecast Api
+      - task: AzureRmWebAppDeployment@4
+        inputs:
+          ConnectionType: 'AzureRM'
+          azureSubscription: 'DeployAppService'
+          appType: 'webAppLinux'
+          WebAppName: 'app-service-deploy'
+          packageForLinux: '$(Pipeline.Workspace)/Weatherforecast Api/WeatherForecast.Api.zip'

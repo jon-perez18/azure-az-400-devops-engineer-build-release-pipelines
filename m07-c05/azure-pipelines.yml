@@ -1,0 +1,24 @@
+
+trigger:
+- main
+
+pool:
+  vmImage: windows-latest
+
+steps:
+- task: VSBuild@1
+  displayName: 'Build DACPAC from SQL Database Project'
+  inputs:
+    solution: 'src\DatabaseSchema\DatabaseSchema.sqlproj'
+    platform: 'x86'
+    configuration: 'Release'
+- task: SqlAzureDacpacDeployment@1
+  inputs:
+    azureSubscription: 'DeployDatabase'
+    AuthenticationType: 'servicePrincipal'
+    ServerName: 'todos-server-hb.database.windows.net'
+    DatabaseName: 'todos'
+    deployType: 'DacpacTask'
+    DeploymentAction: 'Publish'
+    DacpacFile: 'src\DatabaseSchema\bin\Output\DatabaseSchema.dacpac'
+    IpDetectionMethod: 'AutoDetect'

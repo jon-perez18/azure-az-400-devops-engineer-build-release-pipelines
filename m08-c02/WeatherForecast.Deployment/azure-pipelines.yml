@@ -1,0 +1,43 @@
+pool:
+  vmImage: windows-latest
+
+trigger:
+- main
+
+variables:
+- name: ClientPackageVersion
+  value: 1.0.0
+
+stages:
+  - stage: ci
+    displayName: Continuous Integration
+    jobs:
+    - job: build
+      displayName: 'Build and Publish Weatherforecast Api Zip Package'
+      steps:
+
+      - task: UseDotNet@2
+        displayName: 'Use .NET Core SDK 8.x'
+        inputs:
+          version: 8.x
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Compile the application'
+        inputs:
+          projects: '*.sln'
+          arguments: '--configuration Release'
+
+
+      - task: VSTest@3
+        displayName: 'Run unit tests'
+        inputs:
+          testSelector: 'testAssemblies'
+          testAssemblyVer2: | 
+            **/*.UnitTests.dll
+            !**\*TestAdapter.dll
+            !**\obj\**
+          rerunFailedTests: true
+          rerunType: 'basedOnTestFailureCount'
+          rerunFailedTestCasesMaxLimit: '100'
+          rerunMaxAttempts: 10
+          configuration: Release

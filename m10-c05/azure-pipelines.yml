@@ -1,0 +1,19 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: AzureResourceManagerTemplateDeployment@3
+  inputs:
+    deploymentScope: 'Resource Group'
+    azureResourceManagerConnection: 'DeployBicep'
+    subscriptionId: '1dad7d18-a6d1-40c2-a56f-7dfe89999e67'
+    action: 'Create Or Update Resource Group'
+    resourceGroupName: 'vmDemo'
+    location: 'West Europe'
+    templateLocation: 'Linked artifact'
+    csmFile: 'virtualMachine.bicep'
+    overrideParameters: '-adminPassword $(AdminPassword)'
+    deploymentMode: 'Incremental'
