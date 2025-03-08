@@ -1,7 +1,7 @@
 
 $appServiceName = 'TODO';
 $password = 'TODO'
-$packageLocation = "c:\tmp\WeatherForecast.Api.zip";
+$packageLocation = '$(System.DefaultWorkingDirectory)/api-package/api-package/WeatherForecast.Api.zip';
 
 ########################################################
 ########################################################
@@ -12,22 +12,16 @@ $packageLocation = "c:\tmp\WeatherForecast.Api.zip";
 
 $msdeploy = "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe";
 $source = '-source:package='+$packageLocation
-$destination = '-dest:auto,computerName=https://'+ $appServiceName +'.scm.azurewebsites.net:443/msdeploy.axd?site='+ $appServiceName +',userName=$tryagain22,password=' + $password + ',authtype=basic,includeAcls=False';
-
-$siteNameValue = 'Name'',value='''+$appServiceName+'''';
+$destination = '-dest:auto,computerName=https://'+ $appServiceName +'.scm.azurewebsites.net:443/msdeploy.axd?site='+ $appServiceName +',userName=$'+ $appServiceName +',password=' + $password + ',authtype=basic,includeAcls=False';
 
 $msdeployArguments = 
     $source,
     $destination,
     '-verb:sync',
-    '-enableRule:AppOffline',
     '-disableLink:AppPoolExtension',
     '-disableLink:ContentExtension',
-    '-disableLink:CertificateExtension',
-    '-setParam:name=''IIS', 
-    'Web', 
-    'Application', 
-    $siteNameValue
+    '-disableLink:CertificateExtension'
+    '-enableRule:AppOffline';
 
 Write-Host($msdeployArguments);
 
