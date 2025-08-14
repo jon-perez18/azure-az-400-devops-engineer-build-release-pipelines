@@ -18,9 +18,9 @@ steps:
 - task: DotNetCoreCLI@2
   inputs:
     command: 'build'
-    arguments: '-- output $(Build. ArtifactStagingDirectory)/api-package -- configuration Release'
+    arguments: '-- output $(Build.ArtifactStagingDirectory)/api-package --configuration Release'
 
 - task: PublishPipelineArtifact@1
   inputs:
-    targetPath: '$(Build. ArtifactStagingDirectory)/api-package'
+    targetPath: '$(Build.ArtifactStagingDirectory)/api-package'
     publishLocation: 'pipeline'
