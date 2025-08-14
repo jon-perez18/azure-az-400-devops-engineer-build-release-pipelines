@@ -24,3 +24,15 @@ steps:
   inputs:
     targetPath: '$(Build.ArtifactStagingDirectory)/api-package'
     publishLocation: 'pipeline'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'build'
+    projects: 'Weatherforecast.Client/Weatherforecast.Client.csproj'
+    arguments: '--configuration Release'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'test'
+    projects: '**/*.UnitTest.csproj'
+    arguments: '--configuration Release'
